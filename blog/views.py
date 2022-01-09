@@ -4,12 +4,17 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
 from .forms import EmailPostForm, CommentForm
 from django.core.mail import send_mail
+from taggit.models import Tag
 
 # Create your views here.
 
 
-def index(request):
+def index(request, tag_slug=None):
     posts = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        posts = posts.filter(tags__in=tag)
     paginator = Paginator(posts, 3)
     page = request.GET.get('page')
     try:
@@ -18,7 +23,7 @@ def index(request):
         posts = paginator.page(1)
     except EmptyPage:
         posts = paginator.page(paginator.num_pages)
-    return render(request, 'blog/posts/index.html', {'posts': posts, 'page': page})
+    return render(request, 'blog/posts/index.html', {'posts': posts, 'page': page, 'tag': tag})
 
 
 class IndexView(ListView):
